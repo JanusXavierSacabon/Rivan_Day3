@@ -1,0 +1,299 @@
+Day 3
+
+!Po15 to A1
+conf t
+int range e0/1-2
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 15 mode active
+channel-protocol lacp
+
+!Po25 to A2
+int range e0/0, e0/3
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 25 mode active
+channel-protocol lacp
+
+!Po30 to D1
+int range e1/2-3
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 30 mode active
+channel-protocol lacp
+end
+
+---------------------
+@A1
+!Po10 to D1
+conf t
+int range e0/1-2
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 10 mode active
+channel-protocol lacp
+
+!Po 15 to D2
+int range e0/3, e1/0
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 16 mode active
+channel-protocol lacp
+
+@A2
+!Po25 to D2
+int range e0/0, e0/3
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 25 mode active
+channel-protocol lacp
+
+
+!Po20 to D1
+int range e0/1-2
+swi tr encap dot1q
+swi mode trunk
+swi trunk allowed vlan 1-100
+channel-group 20 mode active
+channel-protocol lacp
+end
+------------------------
+@Super eigrp
+
+@d2
+conf t
+router eigrp CCNPLEVEL
+	address-family ipv4 unicast autonomous-system 100
+	network 10.1.4.10 0.0.0.0
+	network 10.2.1.2 0.0.0.0
+	network 10.2.2.2 0.0.0.0
+	network 192.168.1.130 0.0.0.0
+	end
+
+@r4
+conf t
+	router eigrp 100
+	no auto-summary
+	network 10.1.4.4 0.0.0.3
+	network 10.1.4.8 0.0.0.3
+	end
+
+---------------
+@ospf
+
+@r2
+conf t
+	router ospf 1	
+	network 10.1.1.4 0.0.0.3 area 0
+	network 10.1.1.0 0.0.0.3 area 12
+	end
+-------------
+>> BGP
+
+@R1
+conf t
+router bgp 1
+	bgp log-neighbor-changes
+	neighbor 208.8.8.4 remote-as 45
+	neighbor 207.7.7.2 remote-as 2
+	neighbor 209.9.9.3 remote-as 3
+	network 208.8.8.0 mask 255.255.255.0
+	network 207.7.7.0 mask 255.255.255.0
+	network 209.9.9.0 mask 255.255.255.0
+	network 10.1.1.0 mask 255.255.255.252
+	end
+
+@ISP1 Converge
+conf t
+router bgp 45
+	bgp log-neighbor-changes
+	neighbor 208.8.8.1 remote-as 1
+	neighbor 24.2.4.2 remote-as 2
+	neighbor 45.4.5.5 remote-as 45
+	network 208.8.8.0 mask 255.255.255.0
+	network 24.2.4.0 mask 255.255.255.0
+	network 45.4.5.0 mask 255.255.255.0
+	network 44.44.44.44 mask 255.255.255.255
+	
+	
+!PretendInternet
+network 0.0.0.0
+ip route 0.0.0.0 0.0.0.0 null 0
+ip route 10.0.0.0 255.0.0.0 208.8.8.1
+end
+
+
+@ISP2 PLDT
+conf t
+	router bgp 2
+	bgp log-neighbor-changes
+	neighbor 25.2.5.5 remote-as 45
+	neighbor 24.2.4.4 remote-as 45
+	neighbor 32.3.2.3 remote-as 3
+	neighbor 207.7.7.1 remote-as 1
+	network 25.2.5.0 mask 255.255.255.0
+	network 24.2.4.0 mask 255.255.255.0
+	network 32.3.2.0 mask 255.255.255.0
+	network 207.7.7.0 mask 255.255.255.0
+	network 22.22.22.22 mask 255.255.255.255
+	!PretendInternet
+	network 0.0.0.0
+	ip route 0.0.0.0 0.0.0.0 null 0
+	ip route 10.0.0.0 255.0.0.0 207.7.7.1
+end
+
+@ISP3 Globe
+conf t
+	router bgp 3
+	bgp log-neighbor-changes
+	neighbor 35.3.5.5 remote-as 45
+	neighbor 32.3.2.2 remote-as 2
+	neighbor 209.9.9.1 remote-as 1
+	network 35.3.5.0 mask 255.255.255.0
+	network 32.3.2.0 mask 255.255.255.0
+	network 209.9.9.0 mask 255.255.255.0
+	network 33.33.33.33 mask 255.255.255.255
+	network 0.0.0.0
+	ip route 0.0.0.0 0.0.0.0 null 0
+	ip route 10.0.0.0 255.0.0.0 209.9.9.1
+	end
+
+@ISP4 Google
+conf t
+	router bgp 45
+	bgp log-neighbour-changes
+	neighbor 35.3.5.3 remote-as 3
+	neighbor 25.2.5.2 remote-as 2
+	neighbor 45.4.5.4 remote-as 45
+	network 35.3.5.0 mask 255.255.255.0
+	network 25.2.5.0 mask 255.255.255.0
+	network 45.4.5.0 mask 255.255.255.0
+	network 8.8.8.8 mask 255.255.255.255
+	network 0.0.0.0
+	ip route 0.0.0.0 0.0.0.0 null 0
+	end
+
+----------------------
+IPv6 practice
+
+1. a:c::/64
+2. ::/0
+3. fe80::a:0:0:f/64
+4. 2002:6500:0:3000::/64
+5. ::1/128
+6. ff00::beef:a00a:aa0:0:0/8
+7. 2001:db8:1::ab9:C0A8:102/64
+8. 1200:0:130F::9C0:876A:100B/64
+9. 2041:1000:140F::875B:1B/96
+10. 2001:4860:4860::8888/128
+
+---------
+!BGP IPv6
+!@ ISP2 PLDT
+conf t
+	ipv6 unicast-routing
+	int lo2
+		ipv6 add b22::1/128
+	router bgp 2
+		neighbor b:1:22:b::1 remote-as 1
+		neighbor b:1:2:b::3 remote-as 3
+		neighbor b:2:b::4 remote-as 45
+		neighbor b:2:4:b::5 remote-as 45
+		address-family ipv6
+			neighbor b:1:22:b::1 activate
+			neighbor b:1:2:b::3 activate
+			neighbor b:2:b::4 activate
+			neighbor b:2:4:b::5 activate
+		network b:1:22:b::/64
+		network b:1:2:b::/64
+		network b:2:b::/64
+		network b:2:4:b::/64
+		network b22::1/128
+	end
+
+EIGRP v6
+@d2
+conf t
+	int lo1
+		ipv6 add 22:22:22:22::2/64
+	ipv6 router eigrp 10
+		eigrp router-id 2.2.2.2
+		no shut
+	int lo1
+		ipv6 eigrp 10
+	int e1/1
+		ipv6 eigrp 10
+	int vlan 10
+		ipv6 eigrp 10
+	int vlan 20
+		ipv6 eigrp 10
+	int vlan 100
+		ipv6 eigrp 10
+		end
+
+-------------------------
+BW = 10000
+Delay = 1000 + 1000 = 2000
+
+256*( (10000000/10000) + (2000/10))
+256* (1000+200)
+256* 1200
+=307200
+
+
+conf t
+ router eigrp CCNPLEVEL
+  address-family ipv4 unicast autonomous-system 100
+   network 10.1.4.8 0.0.0.3
+   network 10.2.1.0 0.0.0.255
+   network 10.2.2.0 0.0.0.255
+   network 192.168.1.128 0.0.0.31
+   end
+
+Named EIGRP / Multiprotocol EIGRP
+
+Formula:
+
+[(10^7 * 65536) / Min BW ] + [Total Delay psec * 65536] / 10^6
+
+From R4 to 10.2.1.0/24
+
+Step 1: Find the Values
+Min BW: 10000
+Total Delay: 1000 + 10 = 1010
+
+Step 2: Bandwidth / Throughput
+
+= 10^7 * 655336 / 10000
+= 655360000000/10000
+=65536000
+
+Step 3: Delay / Latency
+=[Total Delay psec * 65536] / 10^6
+= 1010 x10^6 /1 000 000
+= 66 191 360
+
+Step 4: Add BW and Delay then Divide via Rib Scale (128)
+=(66 191 360 + 65536000 ) / 128
+= 1029120
+
+
+From R4 find metric for 10.149.0/24
+BW = 10000
+Delay = 11010
+
+10^7 *65536 / 10000
+=65536000
+
+Delay:
+ 11010 000000 * 65536 /10^6
+= 721551360
+
+=787087360 / 128
+=6149120
